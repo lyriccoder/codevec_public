@@ -17,7 +17,7 @@ import redis.clients.jedis.JedisPubSub;
 public class App {
 	private static CommandLineValues s_CommandLineValues;
 	private static ExtractFeaturesTask extractFeaturesTask;
-	private static Jedis jedis = new Jedis("10.198.127.160");
+	private static Jedis jedis = new Jedis("localhost");
 
 	static class MyListener extends JedisPubSub {
 		public void onMessage(String channel, String message) {
