@@ -1,5 +1,6 @@
 import subprocess
 import tempfile
+from time import time
 
 class Extractor:
     def __init__(self, config, jar_path, max_path_length, max_path_width):
@@ -8,9 +9,10 @@ class Extractor:
         self.max_path_width = max_path_width
         self.jar_path = jar_path
 
-    def extract_paths(self, code_string):
+    def extract_paths(self, code_string, file_name_str):
         tmp = tempfile.NamedTemporaryFile(delete=False)
         out = None
+        java_start_time = time()
         try:
             tmp.write(bytes(code_string, encoding='utf-8'))
             tmp.close()
@@ -20,7 +22,8 @@ class Extractor:
                 
             command = ['java', '-cp', self.jar_path, 'JavaExtractor.App', '--max_path_length',
                        str(self.max_path_length), '--max_path_width', str(self.max_path_width), '--file', tmp.name, '--no_hash']
-            print('Running {''.join(command)}')
+            command_str = ' '.join(command)
+            print(f'Running {command_str}')
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = process.communicate()
             output = out.decode().splitlines()
