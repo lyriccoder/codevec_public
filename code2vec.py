@@ -16,11 +16,13 @@ def load_model_dynamically(config: Config) -> Code2VecModelBase:
 
 if __name__ == '__main__':
     config = Config(set_defaults=True, load_from_args=True, verify=True)
-
+    model = None
     model = load_model_dynamically(config)
     config.log('Done creating code2vec model')
 
     predictor = InteractivePredictor(config, model)
     folder = Path('dataset')
+    #print(f'Type {predictor}')
+    #print(f'folder {folder}')
     predictor.predict(folder)
     model.close_session()
