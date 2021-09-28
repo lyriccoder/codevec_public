@@ -18,10 +18,10 @@ class Extractor:
     def extract_paths_with_redis(self, code_string, file_name_str):
         hash_to_string_dict = {}
         result = []
+        req_uuid = str(uuid.uuid1())
         try:
-                req_uuid = str(uuid.uuid1())
                 request = {'uuid': req_uuid, 'code': code_string}
-                #print(f'Going to publish request')
+                #print(f'Going to publish request {req_uuid}')
                 self.publish_r.publish('requests', json.dumps(request))
                 #print('published')
                 self.p.subscribe(req_uuid)
@@ -29,22 +29,28 @@ class Extractor:
                 #print('Subscribed')
                 while True:
                     #print('before get_message ')
-                    message = self.p.get_message()
+                    resp = self.p.get_message()
                     #print(f'got {message}')
                     #message = message['data'].decode()
                     #print(f'after decode')
                     #is_instance_val = type(message['data']) == int
                     #print(f'after get_message {message}; int? {is_instance}')
-                    if message and not message['data'] == 1:
-                        message = message['data'].decode()
-                        #print(f'Got response for id {req_uuid} msg {message} ')
-                        self.p.punsubscribe(req_uuid)
+                    
+                    type_msg = resp['type']
+                    #print(f"RESP {type_msg}")
+                    #print(f"RESP type {type(type_msg)}")
+                    if type_msg.strip() == 'message':
+                        message = resp['data'].decode()
+                        #if message['message']
+                        #real_ch = message['channel']
+                        #print(f"expected channel {req_uuid}, real channel {real_ch}")
+                        #print(f'Got response for id {req_uuid} msg {resp} ')
+                        #self.p.punsubscribe(req_uuid)
                         break
                     else:
                         continue
 
                 output = message.splitlines()
-                output = []
                 if len(output) == 0:
                     err = err.decode()
                     raise ValueError(err)
@@ -65,6 +71,7 @@ class Extractor:
                     result_line = ' '.join(current_result_line_parts) + space_padding
                     result.append(result_line)
         finally:
+            #print(f'result {req_uuid} {result}')
             return result, hash_to_string_dict
             
     def extract_paths(self, code_string, file_name_str):

@@ -53,7 +53,7 @@ class InteractivePredictor:
                 ##################
                 # Extract paths with redis, with running Java VM
                 start_java = time.time()
-                predict_lines, hash_to_string_dict = self.path_extractor.extract_paths(code, file_name_str)
+                predict_lines1, hash_to_string_dict1 = self.path_extractor.extract_paths(code, file_name_str)
                 java_end = time.time()
                 p_java = java_end - start_java
                 self.java[file_name_str] = p_java
@@ -89,6 +89,5 @@ class InteractivePredictor:
             'redis_time': redis_time,
             'total_time_java': predict_time + java_time, 
             'total_time_redis': predict_time + redis_time, 
-            'predict_time': predict_time, 
             }, ignore_index=True)
         df.to_csv('res.csv')
