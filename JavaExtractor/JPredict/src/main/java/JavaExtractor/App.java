@@ -11,50 +11,50 @@ import org.kohsuke.args4j.CmdLineException;
 
 import JavaExtractor.Common.CommandLineValues;
 import JavaExtractor.FeaturesEntities.ProgramRelation;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPubSub;
 
 public class App {
 	private static CommandLineValues s_CommandLineValues;
+	private static ExtractFeaturesTask extractFeaturesTask;
+	private static Jedis jedis = new Jedis("10.198.127.160");
+
+	static class MyListener extends JedisPubSub {
+		public void onMessage(String channel, String message) {
+			System.out.println("Received: " + message);
+			jedis.publish("responses", extractFeaturesTask.process(message));
+		}
+
+		public void onSubscribe(String channel, int subscribedChannels) {
+		}
+
+		public void onUnsubscribe(String channel, int subscribedChannels) {
+		}
+
+		public void onPSubscribe(String pattern, int subscribedChannels) {
+		}
+
+		public void onPUnsubscribe(String pattern, int subscribedChannels) {
+		}
+
+		public void onPMessage(String pattern, String channel, String message) {
+		}
+	}
 
 	public static void main(String[] args) {
+		setupRedis();
 		try {
 			s_CommandLineValues = new CommandLineValues(args);
 		} catch (CmdLineException e) {
 			e.printStackTrace();
 			return;
 		}
+		extractFeaturesTask = new ExtractFeaturesTask(s_CommandLineValues);
 
-		if (s_CommandLineValues.NoHash) {
-			ProgramRelation.setNoHash();
-		}
-
-		if (s_CommandLineValues.File != null) {
-			ExtractFeaturesTask extractFeaturesTask = new ExtractFeaturesTask(s_CommandLineValues,
-					s_CommandLineValues.File.toPath());
-			extractFeaturesTask.processFile();
-		} else if (s_CommandLineValues.Dir != null) {
-			extractDir();
-		}
+	}
+	static void setupRedis() {
+		MyListener l = new MyListener();
+		jedis.subscribe(l, "requests");
 	}
 
-	private static void extractDir() {
-		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(s_CommandLineValues.NumThreads);
-		LinkedList<ExtractFeaturesTask> tasks = new LinkedList<>();
-		try {
-			Files.walk(Paths.get(s_CommandLineValues.Dir)).filter(Files::isRegularFile)
-					.filter(p -> p.toString().toLowerCase().endsWith(".java")).forEach(f -> {
-						ExtractFeaturesTask task = new ExtractFeaturesTask(s_CommandLineValues, f);
-						tasks.add(task);
-					});
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		try {
-			executor.invokeAll(tasks);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} finally {
-			executor.shutdown();
-		}
-	}
 }
