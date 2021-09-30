@@ -1,48 +1,44 @@
 package JavaExtractor;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-
+import jdk.nashorn.internal.objects.NativeJSON;
+import netscape.javascript.JSObject;
 import org.kohsuke.args4j.CmdLineException;
 
 import JavaExtractor.Common.CommandLineValues;
-import JavaExtractor.FeaturesEntities.ProgramRelation;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class App {
 	private static CommandLineValues s_CommandLineValues;
 	private static ExtractFeaturesTask extractFeaturesTask;
-	private static Jedis jedis = new Jedis("localhost");
+	private static Jedis clientForSubscribe = new Jedis("localhost");
+	private static Jedis clientToPublish = new Jedis("localhost");
 
-	static class MyListener extends JedisPubSub {
+	static class CodeListener extends JedisPubSub {
+
 		public void onMessage(String channel, String message) {
-			System.out.println("Received: " + message);
-			jedis.publish("responses", extractFeaturesTask.process(message));
-		}
+			try {
+				ObjectMapper receiveMapper = new ObjectMapper();
+				Map<String, String> map = receiveMapper.readValue(message, Map.class);
+				System.out.println("Received: " + map.get("uuid"));
 
-		public void onSubscribe(String channel, int subscribedChannels) {
-		}
-
-		public void onUnsubscribe(String channel, int subscribedChannels) {
-		}
-
-		public void onPSubscribe(String pattern, int subscribedChannels) {
-		}
-
-		public void onPUnsubscribe(String pattern, int subscribedChannels) {
-		}
-
-		public void onPMessage(String pattern, String channel, String message) {
+				String res = extractFeaturesTask.process(map.get("code"));
+				clientToPublish.publish(map.get("uuid"), res);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public static void main(String[] args) {
-		setupRedis();
 		try {
 			s_CommandLineValues = new CommandLineValues(args);
 		} catch (CmdLineException e) {
@@ -50,11 +46,8 @@ public class App {
 			return;
 		}
 		extractFeaturesTask = new ExtractFeaturesTask(s_CommandLineValues);
-
-	}
-	static void setupRedis() {
-		MyListener l = new MyListener();
-		jedis.subscribe(l, "requests");
+		CodeListener l = new CodeListener();
+		clientForSubscribe.subscribe(l, "requests");
 	}
 
 }

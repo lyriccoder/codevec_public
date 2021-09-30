@@ -48,9 +48,7 @@ public class ExtractFeaturesTask implements Callable<Void> {
 
 	public ArrayList<ProgramFeatures> extractSingleFile(String code) throws ParseException, IOException {
 		FeatureExtractor featureExtractor = new FeatureExtractor(m_CommandLineValues);
-
 		ArrayList<ProgramFeatures> features = featureExtractor.extractFeatures(code);
-
 		return features;
 	}
 
