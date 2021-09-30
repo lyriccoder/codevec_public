@@ -30,23 +30,27 @@ class Extractor:
                 while True:
                     #print('before get_message ')
                     resp = self.p.get_message()
-                    #print(f'got {message}')
+                    #print(f'got {resp}')
                     #message = message['data'].decode()
                     #print(f'after decode')
                     #is_instance_val = type(message['data']) == int
                     #print(f'after get_message {message}; int? {is_instance}')
                     
-                    type_msg = resp['type']
+                    
                     #print(f"RESP {type_msg}")
                     #print(f"RESP type {type(type_msg)}")
-                    if type_msg.strip() == 'message':
-                        message = resp['data'].decode()
-                        #if message['message']
-                        #real_ch = message['channel']
-                        #print(f"expected channel {req_uuid}, real channel {real_ch}")
-                        #print(f'Got response for id {req_uuid} msg {resp} ')
-                        #self.p.punsubscribe(req_uuid)
-                        break
+                    if resp:
+                        type_msg = resp['type']
+                        if type_msg.strip() == 'message':
+                            message = resp['data'].decode()
+                            #if message['message']
+                            #real_ch = message['channel']
+                            #print(f"expected channel {req_uuid}, real channel {real_ch}")
+                            #print(f'Got response for id {req_uuid} msg {resp} ')
+                            #self.p.punsubscribe(req_uuid)
+                            break
+                        else:
+                            continue
                     else:
                         continue
 
