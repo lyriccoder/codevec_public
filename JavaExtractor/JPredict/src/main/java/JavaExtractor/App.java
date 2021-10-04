@@ -1,19 +1,42 @@
 package JavaExtractor;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-
+import jdk.nashorn.internal.objects.NativeJSON;
+import netscape.javascript.JSObject;
 import org.kohsuke.args4j.CmdLineException;
 
 import JavaExtractor.Common.CommandLineValues;
-import JavaExtractor.FeaturesEntities.ProgramRelation;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPubSub;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class App {
 	private static CommandLineValues s_CommandLineValues;
+	private static ExtractFeaturesTask extractFeaturesTask;
+	private static Jedis clientForSubscribe = new Jedis("localhost");
+	private static Jedis clientToPublish = new Jedis("localhost");
+
+	static class CodeListener extends JedisPubSub {
+
+		public void onMessage(String channel, String message) {
+			try {
+				ObjectMapper receiveMapper = new ObjectMapper();
+				Map<String, String> map = receiveMapper.readValue(message, Map.class);
+				System.out.println("Received: " + map.get("uuid"));
+
+				String res = extractFeaturesTask.process(map.get("code"));
+				clientToPublish.publish(map.get("uuid"), res);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	public static void main(String[] args) {
 		try {
@@ -22,39 +45,9 @@ public class App {
 			e.printStackTrace();
 			return;
 		}
-
-		if (s_CommandLineValues.NoHash) {
-			ProgramRelation.setNoHash();
-		}
-
-		if (s_CommandLineValues.File != null) {
-			ExtractFeaturesTask extractFeaturesTask = new ExtractFeaturesTask(s_CommandLineValues,
-					s_CommandLineValues.File.toPath());
-			extractFeaturesTask.processFile();
-		} else if (s_CommandLineValues.Dir != null) {
-			extractDir();
-		}
+		extractFeaturesTask = new ExtractFeaturesTask(s_CommandLineValues);
+		CodeListener l = new CodeListener();
+		clientForSubscribe.subscribe(l, "requests");
 	}
 
-	private static void extractDir() {
-		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(s_CommandLineValues.NumThreads);
-		LinkedList<ExtractFeaturesTask> tasks = new LinkedList<>();
-		try {
-			Files.walk(Paths.get(s_CommandLineValues.Dir)).filter(Files::isRegularFile)
-					.filter(p -> p.toString().toLowerCase().endsWith(".java")).forEach(f -> {
-						ExtractFeaturesTask task = new ExtractFeaturesTask(s_CommandLineValues, f);
-						tasks.add(task);
-					});
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		try {
-			executor.invokeAll(tasks);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} finally {
-			executor.shutdown();
-		}
-	}
 }

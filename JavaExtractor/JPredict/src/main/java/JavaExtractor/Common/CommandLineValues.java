@@ -9,11 +9,11 @@ import org.kohsuke.args4j.Option;
  * This class handles the programs arguments.
  */
 public class CommandLineValues {
-	@Option(name = "--file", required = false)
-	public File File = null;
+//	@Option(name = "--file", required = false)
+//	public File File = null;
 
-	@Option(name = "--dir", required = false, forbids = "--file")
-	public String Dir = null;
+//	@Option(name = "--dir", required = false, forbids = "--file")
+//	public String Dir = null;
 
 	@Option(name = "--max_path_length", required = true)
 	public int MaxPathLength;

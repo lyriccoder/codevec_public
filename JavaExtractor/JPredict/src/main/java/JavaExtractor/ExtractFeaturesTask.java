@@ -18,51 +18,37 @@ import JavaExtractor.FeaturesEntities.ProgramFeatures;
 
 public class ExtractFeaturesTask implements Callable<Void> {
 	CommandLineValues m_CommandLineValues;
-	Path filePath;
 
-	public ExtractFeaturesTask(CommandLineValues commandLineValues, Path path) {
+	public ExtractFeaturesTask(CommandLineValues commandLineValues) {
 		m_CommandLineValues = commandLineValues;
-		this.filePath = path;
 	}
 
 	@Override
 	public Void call() throws Exception {
 		//System.err.println("Extracting file: " + filePath);
-		processFile();
+		process("");
 		//System.err.println("Done with file: " + filePath);
 		return null;
 	}
 
-	public void processFile() {
+	public String process(String code) {
 		ArrayList<ProgramFeatures> features;
 		try {
-			features = extractSingleFile();
+			features = extractSingleFile(code);
 		} catch (ParseException | IOException e) {
 			e.printStackTrace();
-			return;
+			return "";
 		}
 		if (features == null) {
-			return;
+			return "";
 		}
 
-		String toPrint = featuresToString(features);
-		if (toPrint.length() > 0) {
-			System.out.println(toPrint);
-		}
+		return featuresToString(features);
 	}
 
-	public ArrayList<ProgramFeatures> extractSingleFile() throws ParseException, IOException {
-		String code = null;
-		try {
-			code = new String(Files.readAllBytes(this.filePath));
-		} catch (IOException e) {
-			e.printStackTrace();
-			code = Common.EmptyString;
-		}
+	public ArrayList<ProgramFeatures> extractSingleFile(String code) throws ParseException, IOException {
 		FeatureExtractor featureExtractor = new FeatureExtractor(m_CommandLineValues);
-
 		ArrayList<ProgramFeatures> features = featureExtractor.extractFeatures(code);
-
 		return features;
 	}
 
