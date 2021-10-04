@@ -1,7 +1,7 @@
-DICTIONARIES=java-large-release/dictionaries.bin
-DATA=java-large-release/saved_model_iter3.release.data-00000-of-00001
-INDEX=java-large-release/saved_model_iter3.release.index
-META=java-large-release/saved_model_iter3.release.meta
+DICTIONARIES=models/java14m_trainable/dictionaries.bin
+DATA=models/java14m_trainable/saved_model_iter3.release.data-00000-of-00001
+INDEX=models/java14m_trainable/saved_model_iter3.release.index
+META=models/java14m_trainable/saved_model_iter3.release.meta
 
 if [ -f $DICTIONARIES && -f DATA && -f INDEX && -f META  ]; then
     echo "Model already downloaded"
