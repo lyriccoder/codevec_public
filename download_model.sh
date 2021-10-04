@@ -6,5 +6,5 @@ META=models/java14m_trainable/saved_model_iter3.release.meta
 if [ -f $DICTIONARIES && -f DATA && -f INDEX && -f META  ]; then
     echo "Model already downloaded"
 else
-    wget -nc https://s3.amazonaws.com/code2vec/model/java14m_model_trainable.tar.gz && tar -xvzf java14m_model_trainable.tar
+    wget https://s3.amazonaws.com/code2vec/model/java14m_model_trainable.tar.gz && tar -xvzf java14m_model_trainable.tar
 fi
