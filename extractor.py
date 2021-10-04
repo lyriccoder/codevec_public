@@ -12,7 +12,6 @@ class Extractor:
         self.max_path_width = max_path_width
         self.jar_path = jar_path
         self.publish_r = redis.Redis(host='localhost', port=6379, db=0)
-        #self.subscriber_r = redis.Redis(host='localhost', port=6379, db=0)
         self.p = self.publish_r.pubsub()
 
     def extract_paths_with_redis(self, code_string, file_name_str):
@@ -21,33 +20,14 @@ class Extractor:
         req_uuid = str(uuid.uuid1())
         try:
                 request = {'uuid': req_uuid, 'code': code_string}
-                #print(f'Going to publish request {req_uuid}')
                 self.publish_r.publish('requests', json.dumps(request))
-                #print('published')
                 self.p.subscribe(req_uuid)
-                #self.p.get_message()
-                #print('Subscribed')
                 while True:
-                    #print('before get_message ')
                     resp = self.p.get_message()
-                    #print(f'got {resp}')
-                    #message = message['data'].decode()
-                    #print(f'after decode')
-                    #is_instance_val = type(message['data']) == int
-                    #print(f'after get_message {message}; int? {is_instance}')
-                    
-                    
-                    #print(f"RESP {type_msg}")
-                    #print(f"RESP type {type(type_msg)}")
                     if resp:
                         type_msg = resp['type']
                         if type_msg.strip() == 'message':
                             message = resp['data'].decode()
-                            #if message['message']
-                            #real_ch = message['channel']
-                            #print(f"expected channel {req_uuid}, real channel {real_ch}")
-                            #print(f'Got response for id {req_uuid} msg {resp} ')
-                            #self.p.punsubscribe(req_uuid)
                             break
                         else:
                             continue
@@ -75,7 +55,6 @@ class Extractor:
                     result_line = ' '.join(current_result_line_parts) + space_padding
                     result.append(result_line)
         finally:
-            #print(f'result {req_uuid} {result}')
             return result, hash_to_string_dict
             
     def extract_paths(self, code_string, file_name_str):
@@ -85,9 +64,6 @@ class Extractor:
         try:
             tmp.write(bytes(code_string, encoding='utf-8'))
             tmp.close()
-            #with open(tmp.name) as f:
-                #code = f.read()
-                #print(f'you passed the file\n {code}')
                 
             command = ['java', '-cp', self.jar_path, 'JavaExtractor.App', '--max_path_length',
                        str(self.max_path_length), '--max_path_width', str(self.max_path_width), '--file', tmp.name, '--no_hash']
