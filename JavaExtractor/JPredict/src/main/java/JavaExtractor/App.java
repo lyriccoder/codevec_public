@@ -27,8 +27,6 @@ public class App {
 			try {
 				ObjectMapper receiveMapper = new ObjectMapper();
 				Map<String, String> map = receiveMapper.readValue(message, Map.class);
-				System.out.println("Received: " + map.get("uuid"));
-
 				String res = extractFeaturesTask.process(map.get("code"));
 				clientToPublish.publish(map.get("uuid"), res);
 			}
